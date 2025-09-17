@@ -1,0 +1,54 @@
+pipeline {
+    agent {
+        docker { image 'openjdk:21' } // Java runtime & compiler
+    }
+
+    environment {
+        MAIN = 'Main' // change to the fully-qualified name of your class with main()
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                checkout scm
+            }
+        }
+
+        stage('Build') {
+            steps {
+                // create bin directory, gather sources, compile them into bin
+                sh '''
+                  mkdir -p bin
+                  find src -name "*.java" > sources.txt || true
+                  if [ -s sources.txt ]; then
+                    javac -d bin @sources.txt
+                  else
+                    echo "No Java sources found in src/"
+                    exit 1
+                  fi
+                '''
+            }
+        }
+
+        stage('Test Run') {
+            steps {
+                // run the main class (use package name if needed, e.g. com.example.Main)
+                sh '''
+                  if [ -d bin ]; then
+                    java -cp bin "${MAIN}"
+                  else
+                    echo "No compiled classes found to run"
+                    exit 1
+                  fi
+                '''
+            }
+        }
+    }
+
+    post {
+        always {
+            // archive compiled classes for diagnosis / download
+            archiveArtifacts artifacts: 'bin/**', fingerprint: true
+        }
+    }
+}

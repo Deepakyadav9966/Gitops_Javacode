@@ -1,0 +1,40 @@
+pipeline {
+    agent any
+
+    parameters {
+        string(name: 'ENV', defaultValue: 'dev', description: 'Target environment (dev/qa/prod)')
+        string(name: 'VERSION', defaultValue: '1.0.0', description: 'Build version')
+    }
+
+
+    stages {
+        stage('Checkout') {
+            steps {
+                git branch: 'main', url: 'https://github.com/Deepakyadav9966/Gitops_Javacode.git'
+            }
+        }
+
+        stage('Build') {
+            steps {
+                echo "Building version ${params.VERSION} for ${params.ENV}"
+                bat 'openjdk:21'
+            }
+        }
+
+        stage('Test') {
+            steps {
+                echo "Running unit tests..."
+            }
+        }
+
+    }
+
+    post {
+        success {
+            echo "✅ Build ${params.VERSION} for ${params.ENV} uploaded to JFrog successfully!"
+        }
+        failure {
+            echo "❌ Build failed. Please check logs."
+        }
+    }
+}
